@@ -35,3 +35,17 @@ td.num { font-variant-numeric: tabular-nums; }
 .empty { padding: 32px; text-align: center; color: var(--muted); }
 a { color: var(--accent); }
 code { background: var(--border); padding: 2px 6px; border-radius: 4px; }
+.ask-form { display: flex; flex-direction: column; gap: 10px; padding: 16px; }
+.ask-form label { font-weight: 600; }
+.ask-form textarea {
+  font: inherit; color: var(--fg); background: var(--bg);
+  border: 1px solid var(--border); border-radius: 8px; padding: 10px; resize: vertical;
+}
+.ask-form button {
+  align-self: flex-start; font: inherit; color: #fff; background: var(--accent);
+  border: none; border-radius: 8px; padding: 8px 18px; cursor: pointer;
+}
+.ask-form button:disabled { opacity: 0.6; cursor: default; }
+.status { margin: 0; }
+.status.ok { color: #16a34a; }
+.status.error { color: #dc2626; }

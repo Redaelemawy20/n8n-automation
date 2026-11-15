@@ -10,11 +10,11 @@ import { workflow, node, links } from '@n8n-as-code/transformer';
 // ConvertTextToSpeech                elevenLabs                 [creds]
 // AiAgent                            agent                      [AI]
 // OpenaiChatModel                    lmChatOpenAi               [creds] [ai_languageModel]
-// WhenChatMessageReceived            chatTrigger
+// Webhook                            webhook
 //
 // ROUTING MAP
 // ──────────────────────────────────────────────────────────────────
-// WhenChatMessageReceived
+// Webhook
 //    → AiAgent
 //      → ConvertTextToSpeech
 //
@@ -31,7 +31,6 @@ import { workflow, node, links } from '@n8n-as-code/transformer';
     name: 'TTS',
     active: false,
     isArchived: false,
-    projectId: 'yjKa7zz0t0LP3t2k',
     settings: { executionOrder: 'v1', binaryMode: 'separate', availableInMCP: true },
 })
 export class TtsWorkflow {
@@ -68,6 +67,8 @@ export class TtsWorkflow {
         position: [-64, -32],
     })
     AiAgent = {
+        promptType: 'define',
+        text: '={{ $json.body.question }}',
         options: {},
     };
 
@@ -86,19 +87,22 @@ export class TtsWorkflow {
             mode: 'list',
             cachedResultName: 'gpt-4.1-mini',
         },
-        builtInTools: {},
         options: {},
     };
 
     @node({
-        id: 'ff019a51-5326-4ac9-a9e0-3d5a0329ae53',
-        webhookId: 'df03fe31-633c-465f-8db5-aabab0eba0f9',
-        name: 'When chat message received',
-        type: '@n8n/n8n-nodes-langchain.chatTrigger',
-        version: 1.5,
+        id: '3e4f7a6e-36df-4120-bc4b-dd6c60d56aef',
+        webhookId: 'bdbf746f-46fb-40d2-9e07-c5cdbc298384',
+        name: 'Webhook',
+        type: 'n8n-nodes-base.webhook',
+        version: 2.1,
         position: [-288, -32],
     })
-    WhenChatMessageReceived = {
+    Webhook = {
+        httpMethod: 'POST',
+        path: 'tts',
+        authentication: 'none',
+        responseMode: 'onReceived',
         options: {},
     };
 
@@ -109,7 +113,7 @@ export class TtsWorkflow {
     @links()
     defineRouting() {
         this.AiAgent.out(0).to(this.ConvertTextToSpeech.in(0));
-        this.WhenChatMessageReceived.out(0).to(this.AiAgent.in(0));
+        this.Webhook.out(0).to(this.AiAgent.in(0));
 
         this.AiAgent.uses({
             ai_languageModel: this.OpenaiChatModel.output,
