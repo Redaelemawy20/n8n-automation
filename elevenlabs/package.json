@@ -1,0 +1,8 @@
+{
+  "name": "elevenlabs",
+  "version": "0.1.0",
+  "private": true,
+  "devDependencies": {
+    "n8nac": "^2.7.0"
+  }
+}
