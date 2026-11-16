@@ -1,15 +1,15 @@
-import AskForm from "./AskForm";
+import VoiceForm from "./VoiceForm";
 
 export default function TtsPage() {
   return (
     <main>
       <h1>Ask (TTS)</h1>
       <p className="sub">
-        Sends your question to the n8n <code>TTS</code> workflow, which answers it and turns the
-        answer into ElevenLabs speech.
+        Record a question. The n8n <code>TTS</code> workflow transcribes it, answers it with an AI
+        agent, and plays the answer back as ElevenLabs speech.
       </p>
       <div className="card">
-        <AskForm />
+        <VoiceForm />
       </div>
     </main>
   );

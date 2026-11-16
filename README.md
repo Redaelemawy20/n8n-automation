@@ -5,4 +5,4 @@ A collection of n8n automations, each in its own folder with its workflows (as c
 | Automation | Description |
 | --- | --- |
 | [order-automation](order-automation/) | Takes customer orders sent to a Telegram bot, saves them to a database and confirms them in Telegram |
-| [elevenlabs](elevenlabs/) | Answers a question sent from a web page and turns the answer into ElevenLabs speech |
+| [elevenlabs](elevenlabs/) | Voice Q&A: a recorded question is transcribed, answered by an AI agent, and spoken back with ElevenLabs |
