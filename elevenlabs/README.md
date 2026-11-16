@@ -5,3 +5,10 @@ Ask a question out loud on a web page and hear the answer. The recording goes to
 - **Trigger:** `POST /webhook/tts` with multipart form data whose `audio` field holds the recording (webm, wav, mp3, …). The response is the spoken answer as `audio/mp3`. The `/tts` page in the [order-automation](../order-automation/) Next.js app records from the microphone and sends it through its `/api/tts` route. Set `N8N_TTS_WEBHOOK_URL` if n8n isn't at `http://localhost:5678`. The workflow has to be active in n8n for the webhook to respond.
 - **Workflow:** `workflows/TTS.workflow.ts` (n8n workflow "TTS"): Webhook → Transcribe audio → AI Agent → Convert text to speech → Respond to Webhook. It needs ElevenLabs and OpenAI credentials set up in n8n.
 - **Sync:** run `npm install`, then `npx n8nac pull <id>` / `npx n8nac push <file>` from this folder, using [n8n-as-code](https://n8nascode.dev).
+
+## ElevenLabs Orchestrator
+
+A text chat about the restaurant's meals. For now it answers in text only.
+
+- **Trigger:** `POST /webhook/orchestrator` with `{ "message": "...", "sessionId": "..." }`. The response is `{ "reply": "..." }`. The `/chat` page in the order-automation app sends this through its `/api/chat` route. Set `N8N_ORCHESTRATOR_WEBHOOK_URL` if n8n isn't at `http://localhost:5678`.
+- **Workflow:** `workflows/ElevenLabs Orchestrator.workflow.ts`: Webhook → AI Agent (OpenAI `gpt-4.1-mini`, with a restaurant-assistant system prompt) → Respond to Webhook. The agent remembers the last 10 messages per `sessionId`, and has a "Meals sheet" Google Sheets tool that reads the [meals sheet](https://docs.google.com/spreadsheets/d/1cpdkciILA1EksQzFCZspPjYydYAFLqZZCkrQEK12d5s/edit?gid=0#gid=0). It needs the OpenAI and Google Sheets credentials set up in n8n.
