@@ -44,6 +44,10 @@ code { background: var(--border); padding: 2px 6px; border-radius: 4px; }
 .ask-form button:disabled { opacity: 0.6; cursor: default; }
 .ask-form button.recording { background: #dc2626; }
 .ask-form audio { width: 100%; }
+.ask-form .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ask-form button.secondary { color: var(--fg); background: transparent; border: 1px solid var(--border); }
+.ask-form .clip { display: flex; flex-direction: column; gap: 4px; }
+.ask-form .clip-label { font-size: 0.85em; opacity: 0.7; }
 .status { margin: 0; }
 .status.ok { color: #16a34a; }
 .status.error { color: #dc2626; }
