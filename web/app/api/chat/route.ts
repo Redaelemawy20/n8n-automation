@@ -1,50 +1,24 @@
-// POST /api/chat  body: { "message": "...", "sessionId": "..." }
-// Forwards the message to the n8n "ElevenLabs Orchestrator" workflow
-// (elevenlabs/workflows/ElevenLabs Orchestrator.workflow.ts) and returns its { reply }.
-// The production webhook only responds while the workflow is active in n8n.
+// POST /api/chat  body: { "message": "...", "sessionId": "..." }  ->  { "reply": "..." }
+// Forwards the message to the n8n "ElevenLabs Orchestrator" workflow.
+import { HttpError, readJsonObject, withErrors } from "@/lib/http";
+import { postToWebhook, webhooks } from "@/lib/n8n";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const WEBHOOK_URL =
-  process.env.N8N_ORCHESTRATOR_WEBHOOK_URL ?? "http://localhost:5678/webhook/orchestrator";
-
-export async function POST(req: Request) {
-  let body: { message?: unknown; sessionId?: unknown };
-  try {
-    body = await req.json();
-  } catch {
-    return Response.json({ error: "Body must be valid JSON" }, { status: 400 });
-  }
-
+export const POST = withErrors(async (req: Request) => {
+  const body = await readJsonObject(req);
   const message = String(body.message ?? "").trim();
   const sessionId = String(body.sessionId ?? "").trim();
-  if (!message) return Response.json({ error: "message is required" }, { status: 400 });
-  if (!sessionId) return Response.json({ error: "sessionId is required" }, { status: 400 });
+  if (!message) throw new HttpError(400, "message is required");
+  if (!sessionId) throw new HttpError(400, "sessionId is required");
 
-  let res: Response;
-  try {
-    res = await fetch(WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, sessionId }),
-    });
-  } catch (err) {
-    return Response.json(
-      { error: `Could not reach n8n at ${WEBHOOK_URL}: ${(err as Error).message}` },
-      { status: 502 },
-    );
-  }
-
-  if (!res.ok) {
-    return Response.json(
-      { error: `n8n webhook returned ${res.status}: ${await res.text()}` },
-      { status: 502 },
-    );
-  }
+  const res = await postToWebhook(webhooks.orchestrator, {
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, sessionId }),
+  });
 
   const data = (await res.json().catch(() => null)) as { reply?: unknown } | null;
-  if (typeof data?.reply !== "string") {
-    return Response.json({ error: "n8n returned no reply" }, { status: 502 });
-  }
+  if (typeof data?.reply !== "string") throw new HttpError(502, "n8n returned no reply");
   return Response.json({ reply: data.reply });
-}
+});

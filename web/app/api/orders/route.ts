@@ -1,37 +1,26 @@
-import { NextResponse } from "next/server";
+// GET  /api/orders  ->  all orders, newest first
+// POST /api/orders  body: { "item_name": "Coffee", "quantity": 2 }  ->  the created order
+// Called by the n8n "crepe home" workflow (order-automation/workflows).
 import { createOrder, listOrders } from "@/lib/db";
+import { HttpError, readJsonObject, withErrors } from "@/lib/http";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// GET /api/orders -> list all orders
 export async function GET() {
-  return NextResponse.json(listOrders());
+  return Response.json(listOrders());
 }
 
-// POST /api/orders  body: { "item_name": "Coffee", "quantity": 2 }
-// Also accepts "itemName" / "item" for convenience from n8n.
-export async function POST(req: Request) {
-  let body: Record<string, unknown>;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Body must be valid JSON" }, { status: 400 });
-  }
-
+export const POST = withErrors(async (req: Request) => {
+  const body = await readJsonObject(req);
+  // "itemName" / "item" are accepted too, for convenience from n8n.
   const itemName = String(body.item_name ?? body.itemName ?? body.item ?? "").trim();
   const quantity = Number(body.quantity);
 
-  if (!itemName) {
-    return NextResponse.json({ error: "item_name is required" }, { status: 400 });
-  }
+  if (!itemName) throw new HttpError(400, "item_name is required");
   if (!Number.isInteger(quantity) || quantity <= 0) {
-    return NextResponse.json(
-      { error: "quantity must be a positive integer" },
-      { status: 400 }
-    );
+    throw new HttpError(400, "quantity must be a positive integer");
   }
 
-  const order = createOrder(itemName, quantity);
-  return NextResponse.json(order, { status: 201 });
-}
+  return Response.json(createOrder(itemName, quantity), { status: 201 });
+});
