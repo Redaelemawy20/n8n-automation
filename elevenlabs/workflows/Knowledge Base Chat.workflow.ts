@@ -2,22 +2,24 @@ import { workflow, node, links } from '@n8n-as-code/transformer';
 
 // <workflow-map>
 // Workflow : Knowledge Base Chat
-// Nodes   : 6  |  Connections: 1
+// Nodes   : 7  |  Connections: 2
 //
 // NODE INDEX
 // ──────────────────────────────────────────────────────────────────
 // Property name                    Node type (short)         Flags
-// WhenChatMessageReceived            chatTrigger
+// Webhook                            webhook
 // AiAgent                            agent                      [AI]
 // OpenaiChatModel                    lmChatOpenAi               [creds] [ai_languageModel]
 // SimpleMemory                       memoryBufferWindow         [ai_memory]
 // ProductKnowledgeBase               vectorStoreSupabase        [AI] [creds] [ai_tool]
 // EmbeddingsOpenai                   embeddingsOpenAi           [creds] [ai_embedding]
+// RespondToWebhook                   respondToWebhook
 //
 // ROUTING MAP
 // ──────────────────────────────────────────────────────────────────
-// WhenChatMessageReceived
+// Webhook
 //    → AiAgent
+//      → RespondToWebhook
 //
 // AI CONNECTIONS
 // AiAgent.uses({ ai_languageModel: OpenaiChatModel, ai_memory: SimpleMemory, ai_tool: [ProductKnowledgeBase] })
@@ -31,8 +33,9 @@ import { workflow, node, links } from '@n8n-as-code/transformer';
 @workflow({
     id: 'lRB5lpTyuwcIdZ93',
     name: 'Knowledge Base Chat',
-    active: false,
+    active: true,
     isArchived: false,
+    projectId: 'yjKa7zz0t0LP3t2k',
     settings: { executionOrder: 'v1', availableInMCP: true },
 })
 export class KnowledgeBaseChatWorkflow {
@@ -43,12 +46,17 @@ export class KnowledgeBaseChatWorkflow {
     @node({
         id: '2c6e8a1f-4b3d-4f7e-9a5c-1d8b0e6f3a27',
         webhookId: '7f1a3c5e-9b2d-4e6f-8a0c-4d2b6e8f1a39',
-        name: 'When chat message received',
-        type: '@n8n/n8n-nodes-langchain.chatTrigger',
-        version: 1.4,
+        name: 'Webhook',
+        type: 'n8n-nodes-base.webhook',
+        version: 2.1,
         position: [-288, -32],
+        notes: 'Called by the ElevenLabs voice agent tool with { question, conversation_id }. Responds with { answer }.',
     })
-    WhenChatMessageReceived = {
+    Webhook = {
+        httpMethod: 'POST',
+        path: 'knowledge-base',
+        authentication: 'none',
+        responseMode: 'responseNode',
         options: {},
     };
 
@@ -60,6 +68,8 @@ export class KnowledgeBaseChatWorkflow {
         position: [-32, -32],
     })
     AiAgent = {
+        promptType: 'define',
+        text: '={{ $json.body.question }}',
         options: {
             systemMessage: `You are a friendly, helpful assistant for an online store, helping users with questions about its products: what is available, prices, descriptions, stock and categories.
 
@@ -95,6 +105,8 @@ Keep answers short, clear and conversational, and reply in the same language the
         position: [-32, 200],
     })
     SimpleMemory = {
+        sessionIdType: 'customKey',
+        sessionKey: "={{ $('Webhook').item.json.body.conversation_id }}",
         contextWindowLength: 10,
     };
 
@@ -136,13 +148,27 @@ Keep answers short, clear and conversational, and reply in the same language the
         options: {},
     };
 
+    @node({
+        id: '6f0c3b8e-5a2d-4e9f-b4c7-1e3d5b8a0f27',
+        name: 'Respond to Webhook',
+        type: 'n8n-nodes-base.respondToWebhook',
+        version: 1.5,
+        position: [320, -32],
+    })
+    RespondToWebhook = {
+        respondWith: 'json',
+        responseBody: '={{ { "answer": $json.output } }}',
+        options: {},
+    };
+
     // =====================================================================
     // ROUTAGE ET CONNEXIONS
     // =====================================================================
 
     @links()
     defineRouting() {
-        this.WhenChatMessageReceived.out(0).to(this.AiAgent.in(0));
+        this.Webhook.out(0).to(this.AiAgent.in(0));
+        this.AiAgent.out(0).to(this.RespondToWebhook.in(0));
 
         this.AiAgent.uses({
             ai_languageModel: this.OpenaiChatModel.output,
